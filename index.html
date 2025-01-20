@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EL INCREÍBLE JUEGO DE FRAN</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2em;
+      margin-top: 20px;
+    }
+
+    #game-board {
+      display: inline-block;
+      margin-top: 30px;
+    }
+
+    .row {
+      display: flex;
+    }
+
+    .cell {
+      width: 80px;
+      height: 80px;
+      font-size: 2em;
+      margin: 5px;
+      cursor: pointer;
+      background-color: #f0f0f0;
+      border: 2px solid #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    button:disabled {
+      background-color: #ccc;
+    }
+
+    #status {
+      margin-top: 20px;
+      font-size: 1.5em;
+    }
+
+    #reset {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 1em;
+      cursor: pointer;
+      border: none;
+      background-color: #4CAF50;
+      color: white;
+    }
+
+    #reset:hover {
+      background-color: #45a049;
+    }
+
+    /* Estilo para la pantalla completa de alerta */
+    #alert-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      color: white;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      font-size: 2em;
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+  <h1>EL INCREÍBLE JUEGO DE FRAN</h1>
+  <div id="game-board">
+    <div class="row">
+      <button class="cell" data-index="0"></button>
+      <button class="cell" data-index="1"></button>
+      <button class="cell" data-index="2"></button>
+    </div>
+    <div class="row">
+      <button class="cell" data-index="3"></button>
+      <button class="cell" data-index="4"></button>
+      <button class="cell" data-index="5"></button>
+    </div>
+    <div class="row">
+      <button class="cell" data-index="6"></button>
+      <button class="cell" data-index="7"></button>
+      <button class="cell" data-index="8"></button>
+    </div>
+  </div>
+  <div id="status">Turno de SEBASTIAN (X)</div>
+  <button id="reset">Reiniciar Juego</button>
+
+  <!-- Pantalla completa de alerta -->
+  <div id="alert-overlay">
+    <div id="alert-message"></div>
+  </div>
+
+  <script>
+    const cells = document.querySelectorAll('.cell');
+    const statusDisplay = document.getElementById('status');
+    const resetButton = document.getElementById('reset');
+    const alertOverlay = document.getElementById('alert-overlay');
+    const alertMessage = document.getElementById('alert-message');
+
+    let currentPlayer = 'X';  // El jugador comienza con 'X' (SEBASTIAN)
+    let gameActive = true;
+    let board = ['', '', '', '', '', '', '', '', ''];  // Arreglo para el tablero
+
+    const winningCombinations = [
+      [0, 1, 2], [3, 4, 5], [6, 7, 8],  // filas
+      [0, 3, 6], [1, 4, 7], [2, 5, 8],  // columnas
+      [0, 4, 8], [2, 4, 6]  // diagonales
+    ];
+
+    // Función para manejar el clic en las celdas
+    const handleClick = (e) => {
+      const index = e.target.getAttribute('data-index');
+
+      // Si la celda ya está ocupada o el juego no está activo, no hacer nada
+      if (board[index] !== '' || !gameActive || currentPlayer === 'O') return;
+
+      // Coloca la "X" en la celda seleccionada
+      board[index] = currentPlayer;
+      e.target.innerText = currentPlayer;  // Coloca la "X" o el corazón en la celda
+
+      // Comprobar si hay un ganador
+      checkWinner();
+
+      // Si el juego sigue activo, cambiar el turno
+      if (gameActive) {
+        currentPlayer = 'O';  // Cambiar al turno de la computadora
+        statusDisplay.innerText = 'Turno de ❤️ (Computadora)';
+        setTimeout(computerMove, 500);  // La computadora hace su movimiento después de un pequeño retraso
+      }
+    };
+
+    // Verifica si algún jugador ha ganado
+    const checkWinner = () => {
+      for (let combination of winningCombinations) {
+        const [a, b, c] = combination;
+        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+          gameActive = false;
+          if (currentPlayer === 'X') {
+            statusDisplay.innerText = 'SEBASTIAN (X) gana!';
+          } else {
+            statusDisplay.innerText = 'La Computadora (❤️) gana!';
+          }
+          showAlert();
+          return;
+        }
+      }
+
+      // Si no hay espacios vacíos, el juego termina en empate
+      if (!board.includes('')) {
+        gameActive = false;
+        statusDisplay.innerText = '¡Es un empate!';
+        showAlert();
+      }
+    };
+
+    // La computadora hace su movimiento
+    const computerMove = () => {
+      const availableSpaces = board.reduce((acc, val, index) => {
+        if (val === '') acc.push(index);
+        return acc;
+      }, []);
+
+      if (availableSpaces.length === 0) return;
+
+      // La computadora elige una celda aleatoria
+      const randomMove = availableSpaces[Math.floor(Math.random() * availableSpaces.length)];
+      board[randomMove] = 'O';
+      cells[randomMove].innerText = '❤️';  // Coloca un corazón en lugar de "O"
+
+      // Verificar si la computadora ganó
+      checkWinner();
+
+      // Si el juego sigue activo, el turno vuelve al jugador
+      if (gameActive) {
+        currentPlayer = 'X';  // Vuelve al turno del jugador (SEBASTIAN)
+        statusDisplay.innerText = 'Turno de SEBASTIAN (X)';
+      }
+    };
+
+    // Mostrar alerta cuando el juego termine
+    const showAlert = () => {
+      alertOverlay.style.display = 'flex';
+      alertMessage.innerText = " BUENA, me ganaste esta vez ! Feliz cumpleaños mi amor, Te Amo";
+    };
+
+    // Reinicia el juego
+    const resetGame = () => {
+      board = ['', '', '', '', '', '', '', '', ''];  // Limpiar tablero
+      gameActive = true;
+      currentPlayer = 'X';  // El jugador comienza
+      cells.forEach(cell => cell.innerText = '');  // Limpiar las celdas visualmente
+      statusDisplay.innerText = 'Turno de SEBASTIAN (X)';
+      alertOverlay.style.display = 'none';  // Ocultar la alerta
+    };
+
+    // Agregar eventos de clic a las celdas
+    cells.forEach(cell => cell.addEventListener('click', handleClick));
+
+    // Evento de reiniciar el juego
+    resetButton.addEventListener('click', resetGame);
+
+    // Estado inicial
+    statusDisplay.innerText = 'Turno de SEBASTIAN (X)';
+  </script>
+</body>
+</html>
